@@ -20,7 +20,7 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 async function run() {
     try {
         const serviceCollection = client.db('travelService').collection('services');
-        // const orderCollection = client.db('geniusCar').collection('orders');
+        const reviewCollection = client.db('travelService').collection('reviews');
 
         app.get('/services', async (req, res) => {
             const query = {}
@@ -37,46 +37,58 @@ async function run() {
         });
 
 
-        // orders api
-        // app.get('/orders', async (req, res) => {
-        //     let query = {};
+        // Reviews api :
+        app.post('/services', async (req, res) => {
+            const user = req.body;
+            console.log(user)
+            const result = await serviceCollection.insertOne(user)
+            res.send(result)
+        })
+        // reviews
+        app.get('/reviews', async (req, res) => {
+            const query = {}
+            const cursor = reviewCollection.find(query)
+            const reviews = await cursor.toArray()
+            res.send(reviews)
+        })
+        app.get('/reviews/:id', async (req, res) => {
+            const id = req.params.id
+            console.log(id)
+            const query = { _id: ObjectId(id) }
+            const result = await reviewCollection.findOne(query)
+            console.log(result)
+            res.send(result)
+        })
+        app.post('/reviews', async (req, res) => {
+            const user = req.body;
+            console.log(user)
+            const result = await reviewCollection.insertOne(user)
+            res.send(result)
+        })
+        app.put('/reviews/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) }
+            const review = req.body;
+            console.log(review)
+            const option = { upsert: true }
+            const updateReview = {
+                $set: {
+                    reviewData: review.reviewData
+                }
+            }
+            const result = await reviewCollection.updateOne(filter, updateReview, option)
+            res.send(result)
+        })
 
-        //     if (req.query.email) {
-        //         query = {
-        //             email: req.query.email
-        //         }
-        //     }
+        app.delete('/reviews/:id', async (req, res) => {
+            const id = req.params.id
+            console.log(id)
+            const query = { _id: ObjectId(id) }
+            const result = await reviewCollection.deleteOne(query)
+            console.log(result)
+            res.send(result)
+        })
 
-        //     const cursor = orderCollection.find(query);
-        //     const orders = await cursor.toArray();
-        //     res.send(orders);
-        // });
-
-        // app.post('/orders', async (req, res) => {
-        //     const order = req.body;
-        //     const result = await orderCollection.insertOne(order);
-        //     res.send(result);
-        // });
-
-        // app.patch('/orders/:id', async (req, res) => {
-        //     const id = req.params.id;
-        //     const status = req.body.status
-        //     const query = { _id: ObjectId(id) }
-        //     const updatedDoc = {
-        //         $set: {
-        //             status: status
-        //         }
-        //     }
-        //     const result = await orderCollection.updateOne(query, updatedDoc);
-        //     res.send(result);
-        // })
-
-        // app.delete('/orders/:id', async (req, res) => {
-        //     const id = req.params.id;
-        //     const query = { _id: ObjectId(id) };
-        //     const result = await orderCollection.deleteOne(query);
-        //     res.send(result);
-        // })
     }
     finally {
 
@@ -85,11 +97,6 @@ async function run() {
 }
 
 run().catch(err => console.error(err));
-
-
-
-
-
 
 app.get('/', (req, res) => {
     res.send('Travel service server is running')
